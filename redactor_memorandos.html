@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redactor IA - Documentos Institucionales</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      padding: 36px;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    /* HEADER */
+    .header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+    .header-icon {
+      background: #1d6f42; color: white; border-radius: 12px;
+      width: 52px; height: 52px; display: flex; align-items: center;
+      justify-content: center; font-size: 26px; flex-shrink: 0;
+    }
+    .header h1 { font-size: 22px; color: #1a1a2e; }
+    .header p  { font-size: 13px; color: #6b7280; margin-top: 3px; }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      border-radius: 20px; padding: 2px 10px; margin-left: 6px; vertical-align: middle;
+    }
+    .badge-green { background: linear-gradient(135deg,#1d6f42,#2ecc71); color: white; }
+
+    /* API KEY */
+    .api-section {
+      background: #f8fafc; border: 1px solid #e5e7eb;
+      border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;
+    }
+    .api-section label {
+      font-size: 12px; font-weight: 700; color: #374151;
+      text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;
+    }
+    .api-row { display: flex; gap: 10px; align-items: center; }
+    .api-row input {
+      flex: 1; border: 1px solid #d1d5db; border-radius: 8px;
+      padding: 9px 12px; font-size: 13px; color: #374151; background: white; outline: none;
+    }
+    .api-row input:focus { border-color: #1d6f42; }
+    .api-hint { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+    .api-hint a { color: #1d6f42; text-decoration: none; }
+
+    /* MODO TABS */
+    .mode-tabs {
+      display: flex; gap: 0; margin-bottom: 24px;
+      border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;
+    }
+    .mode-tab {
+      flex: 1; padding: 11px; text-align: center; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: #6b7280; background: #f9fafb;
+      border: none; transition: all 0.2s;
+    }
+    .mode-tab.active { background: #1d6f42; color: white; }
+    .mode-tab:hover:not(.active) { background: #f0fdf4; color: #1d6f42; }
+
+    /* SECTION LABEL */
+    .section-label {
+      font-size: 12px; font-weight: 700; color: #374151;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+    }
+
+    /* CAMPOS ESTRUCTURADOS */
+    .fields-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+    }
+    @media(max-width:600px){ .fields-grid { grid-template-columns: 1fr; } }
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    .field-group label { font-size: 12px; font-weight: 600; color: #374151; }
+    .field-group input, .field-group select, .field-group textarea {
+      border: 1px solid #d1d5db; border-radius: 8px;
+      padding: 9px 12px; font-size: 13px; color: #374151;
+      background: #f9fafb; outline: none; transition: border 0.2s;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+      border-color: #1d6f42; background: white;
+    }
+    .field-full { grid-column: 1 / -1; }
+
+    /* PERSONA CARD */
+    .persona-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+    }
+    @media(max-width:600px){ .persona-grid { grid-template-columns: 1fr; } }
+    .persona-card {
+      background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px;
+    }
+    .persona-card .persona-title {
+      font-size: 12px; font-weight: 700; color: #1d6f42;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .persona-card .field-group { margin-bottom: 8px; }
+    .persona-card .field-group:last-child { margin-bottom: 0; }
+
+    /* DIVIDER */
+    .divider {
+      border: none; border-top: 1px solid #e5e7eb; margin: 18px 0;
+    }
+
+    /* CONTROLES */
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .ctrl-group { flex: 1; min-width: 150px; }
+    .ctrl-group label {
+      display: block; font-size: 12px; font-weight: 600; color: #374151;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .ctrl-group select {
+      width: 100%; border: 1px solid #d1d5db; border-radius: 8px;
+      padding: 9px 12px; font-size: 13px; color: #374151;
+      background: #f9fafb; outline: none; transition: border 0.2s; cursor: pointer;
+    }
+    .ctrl-group select:focus { border-color: #1d6f42; }
+
+    /* MODELO SELECTOR */
+    .model-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .model-btn {
+      border: 2px solid #e5e7eb; border-radius: 10px; padding: 8px 14px;
+      font-size: 12px; font-weight: 600; cursor: pointer; background: #f9fafb;
+      color: #374151; transition: all 0.2s;
+    }
+    .model-btn:hover { border-color: #1d6f42; color: #1d6f42; background: #f0fdf4; }
+    .model-btn.active { border-color: #1d6f42; background: #1d6f42; color: white; }
+    .model-tag {
+      font-size: 10px; font-weight: 700; margin-left: 4px;
+      background: rgba(255,255,255,0.25); border-radius: 4px; padding: 1px 4px;
+    }
+    .model-btn:not(.active) .model-tag { background: #e5e7eb; color: #6b7280; }
+    .model-info {
+      border-radius: 8px; padding: 9px 13px; font-size: 12px; margin-bottom: 18px; border: 1px solid;
+    }
+    .model-info.green  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .model-info.blue   { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+    .model-info.yellow { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+
+
+    /* PDF ADJUNTO */
+    .pdf-section {
+      background: #fdf4ff; border: 1px solid #e9d5ff;
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+    }
+    .pdf-section label.sec-lbl {
+      font-size: 12px; font-weight: 700; color: #7e22ce;
+      text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;
+    }
+    .pdf-drop {
+      border: 2px dashed #d8b4fe; border-radius: 10px; padding: 20px;
+      text-align: center; cursor: pointer; background: #faf5ff; transition: all 0.2s;
+    }
+    .pdf-drop:hover, .pdf-drop.dragover { border-color: #7e22ce; background: #f3e8ff; }
+    .pdf-drop p { font-size: 13px; color: #7e22ce; margin-top: 4px; }
+    .pdf-drop small { font-size: 11px; color: #a78bfa; }
+    .pdf-drop input { display: none; }
+    .pdf-loaded {
+      display: none; align-items: center; gap: 10px; margin-top: 10px;
+      background: #f3e8ff; border-radius: 8px; padding: 9px 12px;
+    }
+    .pdf-loaded .pdf-name { flex:1; font-size:13px; color:#5b21b6; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pdf-loaded .pdf-size { font-size:11px; color:#a78bfa; flex-shrink:0; }
+    .pdf-loaded button { background:none; border:none; cursor:pointer; color:#dc2626; font-size:16px; flex-shrink:0; }
+    .pdf-hint { font-size: 11px; color: #a78bfa; margin-top: 7px; }
+    /* URL INPUT */
+    .url-section {
+      background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 16px;
+    }
+    .url-section label {
+      font-size: 12px; font-weight: 700; color: #374151;
+      text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;
+    }
+    .url-row { display: flex; gap: 8px; align-items: center; }
+    .url-row input {
+      flex: 1; border: 1px solid #d1d5db; border-radius: 8px;
+      padding: 9px 12px; font-size: 13px; color: #374151; background: white; outline: none;
+    }
+    .url-row input:focus { border-color: #1d6f42; }
+    .url-hint { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+    #url-status { font-size: 12px; margin-top: 6px; display: none; }
+    #url-status.ok  { color: #15803d; }
+    #url-status.err { color: #dc2626; }
+
+    /* TOGGLE SWITCH */
+    .toggle-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: #374151; margin-bottom: 14px;
+    }
+    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: #cbd5e1; border-radius: 22px; transition: 0.3s;
+    }
+    .slider:before {
+      content: ""; position: absolute; height: 16px; width: 16px;
+      left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle input:checked + .slider { background: #1d6f42; }
+    .toggle input:checked + .slider:before { transform: translateX(18px); }
+
+    /* TEXTAREA */
+    .editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    @media(max-width:600px){ .editor-grid { grid-template-columns: 1fr; } }
+    .editor-box label {
+      display: block; font-size: 12px; font-weight: 700; color: #374151;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px;
+    }
+    .editor-box textarea {
+      width: 100%; height: 260px; border: 1px solid #d1d5db; border-radius: 10px;
+      padding: 14px; font-size: 13px; color: #374151; background: #f9fafb;
+      resize: vertical; outline: none; line-height: 1.7; transition: border 0.2s;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .editor-box textarea:focus { border-color: #1d6f42; background: white; }
+    #output-text { background: #f0fdf4; border-color: #bbf7d0; }
+    .char-count { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 4px; }
+
+    /* LOADER */
+    .loader { display: none; align-items: center; gap: 10px; font-size: 13px; color: #1d6f42; margin-top: 14px; }
+    .spinner {
+      width: 20px; height: 20px; border: 3px solid #bbf7d0;
+      border-top-color: #1d6f42; border-radius: 50%;
+      animation: spin 0.8s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* BOTONES */
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 130px; padding: 13px; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: #1d6f42; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #165a35; transform: translateY(-1px); }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #f3f4f6; color: #374151; flex: 0 1 auto; padding: 13px 20px; }
+    .btn-secondary:hover { background: #e5e7eb; }
+
+    #status {
+      display: none; margin-top: 14px; padding: 12px 16px;
+      border-radius: 10px; font-size: 13px; font-weight: 500;
+    }
+    #status.success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    #status.error   { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* PLANTILLAS */
+    .templates { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .tpl-btn {
+      background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 6px 13px; font-size: 12px; color: #374151; cursor: pointer; transition: all 0.2s;
+    }
+    .tpl-btn:hover { background: #dcfce7; border-color: #1d6f42; color: #1d6f42; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-icon">✍️</div>
+    <div>
+      <h1>Redactor IA <span class="badge badge-green">✦ Gemini</span></h1>
+      <p>Memorandos, oficios y correos institucionales · Ministerio de Educación Ecuador</p>
+    </div>
+  </div>
+
+  <!-- API KEY -->
+  <div class="api-section">
+    <label>🔑 API Key · Google AI Studio</label>
+    <div class="api-row">
+      <input type="password" id="api-key" placeholder="Pega tu API Key aquí…"/>
+      <button class="btn btn-secondary" onclick="toggleKey()">👁 Ver</button>
+    </div>
+    <div class="api-hint">
+      Obtén tu clave en <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>
+      · Solo se procesa en tu navegador.
+    </div>
+  </div>
+
+  <!-- MODELO -->
+  <div class="section-label">Modelo</div>
+  <div class="model-selector">
+    <button class="model-btn active" onclick="selectModel('gemini-3.1-flash-lite-preview')" id="m1">
+      🏆 Gemini 3.1 Flash Lite <span class="model-tag">⭐ 500/día</span>
+    </button>
+    <button class="model-btn" onclick="selectModel('gemini-3-flash-preview')" id="m2">
+      🚀 Gemini 3 Flash <span class="model-tag">GRATIS</span>
+    </button>
+    <button class="model-btn" onclick="selectModel('gemini-2.5-flash')" id="m3">
+      ⚡ Gemini 2.5 Flash <span class="model-tag">GRATIS</span>
+    </button>
+    <button class="model-btn" onclick="selectModel('gemini-2.5-flash-lite')" id="m4">
+      🔵 2.5 Flash Lite <span class="model-tag">GRATIS</span>
+    </button>
+  </div>
+  <div class="model-info green" id="model-info">
+    🏆 <strong>Gemini 3.1 Flash Lite</strong> — 15 RPM · 500 consultas/día · 250K tokens/min.
+  </div>
+
+  <!-- MODO TABS -->
+  <div class="section-label">Modo de ingreso</div>
+  <div class="mode-tabs" style="margin-bottom:24px">
+    <button class="mode-tab active" id="tab-form" onclick="switchMode('form')">📋 Formulario estructurado</button>
+    <button class="mode-tab" id="tab-quick" onclick="switchMode('quick')">⚡ Modo rápido</button>
+    <button class="mode-tab" id="tab-url" onclick="switchMode('url')">🔗 Cargar desde URL</button>
+  </div>
+
+
+  <!-- PDF ADJUNTO (opcional, siempre visible) -->
+  <div class="pdf-section">
+    <label class="sec-lbl">📎 Adjuntar PDF de referencia <span style="font-weight:400;text-transform:none;font-size:11px;">(opcional)</span></label>
+    <div class="pdf-drop" id="pdf-drop" onclick="document.getElementById('pdf-input').click()">
+      <div style="font-size:28px">📄</div>
+      <p>Arrastra un PDF o haz clic para seleccionar</p>
+      <small>Reglamentos, circulares, memorandos anteriores · Máx. 10 MB</small>
+      <input type="file" id="pdf-input" accept="application/pdf"/>
+    </div>
+    <div class="pdf-loaded" id="pdf-loaded">
+      <span style="font-size:20px">📄</span>
+      <span class="pdf-name" id="pdf-name"></span>
+      <span class="pdf-size" id="pdf-size"></span>
+      <button onclick="clearPDF()" title="Quitar PDF">✕</button>
+    </div>
+    <div class="pdf-hint">Gemini leerá el contenido del PDF y lo usará como contexto para generar el documento.</div>
+  </div>
+
+  <!-- ===== MODO FORMULARIO ===== -->
+  <div id="panel-form">
+
+    <!-- EMISOR / RECEPTOR -->
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="persona-title">📤 Emisor</div>
+        <div class="field-group"><label>Nombre completo</label>
+          <input type="text" id="f-emisor-nombre" placeholder="Ej. Lcda. María García"/></div>
+        <div class="field-group"><label>Cargo</label>
+          <input type="text" id="f-emisor-cargo" placeholder="Ej. Coordinadora Distrital DECE"/></div>
+        <div class="field-group"><label>Institución / Distrito</label>
+          <input type="text" id="f-emisor-inst" placeholder="Ej. Distrito 09D01"/></div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-title">📥 Receptor</div>
+        <div class="field-group"><label>Nombre completo</label>
+          <input type="text" id="f-receptor-nombre" placeholder="Ej. MSc. Carlos López"/></div>
+        <div class="field-group"><label>Cargo</label>
+          <input type="text" id="f-receptor-cargo" placeholder="Ej. Director Distrital"/></div>
+        <div class="field-group"><label>Institución / Distrito</label>
+          <input type="text" id="f-receptor-inst" placeholder="Ej. Distrito 09D01"/></div>
+      </div>
+    </div>
+
+    <div class="fields-grid">
+      <div class="field-group">
+        <label>📌 Asunto</label>
+        <input type="text" id="f-asunto" placeholder="Ej. Convocatoria a reunión técnica distrital"/>
+      </div>
+      <div class="field-group">
+        <label>📅 Fecha</label>
+        <input type="date" id="f-fecha"/>
+      </div>
+      <div class="field-group">
+        <label>⏰ Plazo de respuesta</label>
+        <input type="text" id="f-plazo" placeholder="Ej. 48 horas, viernes 21/03/2026"/>
+      </div>
+      <div class="field-group">
+        <label>📂 Referencia / Número de oficio</label>
+        <input type="text" id="f-referencia" placeholder="Ej. MINEDUC-09D01-2026-0123-M"/>
+      </div>
+      <div class="field-group field-full">
+        <label>💬 Detalle o idea principal</label>
+        <textarea id="f-detalle" rows="4"
+          placeholder="Describe brevemente el propósito del documento. No es necesario redactar, solo la idea.
+
+Ej: convocar a directores para revisar el plan de contingencia del tercer quimestre y entregar informes DECE"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODO RÁPIDO ===== -->
+  <div id="panel-quick" style="display:none">
+    <div class="field-group" style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;display:block">
+        ✏️ Escribe tu idea o borrador
+      </label>
+      <textarea id="q-texto" style="width:100%;height:160px;border:1px solid #d1d5db;border-radius:10px;padding:14px;font-size:13px;color:#374151;background:#f9fafb;resize:vertical;outline:none;line-height:1.7;font-family:'Segoe UI',sans-serif"
+        placeholder="Escribe la idea principal sin preocuparte por la redacción.
+
+Ej: decirle al rector que mande los informes del DECE antes del viernes o habrá problema con la zonal"></textarea>
+      <div class="char-count" id="q-char">0 caracteres</div>
+    </div>
+  </div>
+
+  <!-- ===== MODO URL ===== -->
+  <div id="panel-url" style="display:none">
+    <div class="url-section">
+      <label>🔗 URL de referencia</label>
+      <div class="url-row">
+        <input type="url" id="url-input" placeholder="https://docs.google.com/… o cualquier enlace público"/>
+        <button class="btn btn-secondary" onclick="fetchURL()">⬇ Cargar</button>
+      </div>
+      <div class="url-hint">Pega el enlace del documento o página con la información base. Se extraerá el texto automáticamente.</div>
+      <div id="url-status"></div>
+    </div>
+    <div class="field-group">
+      <label style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;display:block">
+        📋 Contenido cargado / instrucción adicional
+      </label>
+      <textarea id="url-content" style="width:100%;height:160px;border:1px solid #d1d5db;border-radius:10px;padding:14px;font-size:13px;color:#374151;background:#f9fafb;resize:vertical;outline:none;line-height:1.7;font-family:'Segoe UI',sans-serif"
+        placeholder="El contenido del enlace aparecerá aquí, o escribe instrucciones adicionales…"></textarea>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- CONTROLES -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Tipo de documento</label>
+      <select id="doc-type">
+        <option value="memorando">📋 Memorando</option>
+        <option value="oficio">📄 Oficio</option>
+        <option value="circular">📢 Circular</option>
+        <option value="correo institucional">📧 Correo institucional</option>
+        <option value="informe de actividades">📊 Informe de actividades</option>
+        <option value="acta de reunión">📝 Acta de reunión</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Tono</label>
+      <select id="tone">
+        <option value="formal">🎩 Formal</option>
+        <option value="muy formal">📜 Muy formal</option>
+        <option value="cordial y formal">🤝 Cordial y formal</option>
+        <option value="técnico">🔬 Técnico</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Extensión</label>
+      <select id="length">
+        <option value="conciso y directo, máximo 3 párrafos">⚡ Conciso (máx. 3 párrafos)</option>
+        <option value="completo con todos los detalles necesarios">📄 Completo</option>
+        <option value="muy breve, solo lo esencial en pocas líneas">🎯 Muy breve</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Acción</label>
+      <select id="action">
+        <option value="redactar">🖊 Redactar</option>
+        <option value="mejorar">✨ Mejorar borrador</option>
+        <option value="resumir">📌 Resumir</option>
+        <option value="corregir">🔍 Solo corregir</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PLANTILLAS RÁPIDAS -->
+  <div class="templates">
+    <span style="font-size:12px;color:#6b7280;font-weight:600">Plantillas:</span>
+    <button class="tpl-btn" onclick="loadTemplate('convocatoria')">📅 Convocatoria</button>
+    <button class="tpl-btn" onclick="loadTemplate('solicitud')">📩 Solicitud</button>
+    <button class="tpl-btn" onclick="loadTemplate('dece')">🧠 DECE</button>
+    <button class="tpl-btn" onclick="loadTemplate('permiso')">📋 Permiso</button>
+    <button class="tpl-btn" onclick="loadTemplate('felicitacion')">🏅 Felicitación</button>
+  </div>
+
+  <!-- TOGGLE CONCISO -->
+  <div class="toggle-row">
+    <label class="toggle">
+      <input type="checkbox" id="include-header" checked>
+      <span class="slider"></span>
+    </label>
+    Incluir encabezado institucional (PARA / DE / ASUNTO / FECHA)
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="editor-grid">
+    <div class="editor-box">
+      <label>📝 Vista previa de datos</label>
+      <textarea id="preview-text" placeholder="Aquí verás un resumen de los datos ingresados antes de enviar…" readonly></textarea>
+    </div>
+    <div class="editor-box">
+      <label>✅ Documento generado por IA</label>
+      <textarea id="output-text" placeholder="El documento aparecerá aquí…" readonly></textarea>
+    </div>
+  </div>
+
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <span id="loader-msg">Generando…</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar</button>
+    <button class="btn btn-secondary" onclick="previewData()">👁 Vista previa</button>
+    <button class="btn btn-secondary" onclick="copyResult()" id="btn-copy" style="display:none">📋 Copiar</button>
+    <button class="btn btn-primary" id="btn-send" onclick="sendToGemini()">✨ Generar con IA</button>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<script>
+  let selectedModel = 'gemini-3.1-flash-lite-preview';
+  let currentMode   = 'form';
+  let urlLoadedText = '';
+
+  // Fecha de hoy por defecto
+  document.getElementById('f-fecha').valueAsDate = new Date();
+
+  // Contador quick mode
+  document.getElementById('q-texto').addEventListener('input', function() {
+    document.getElementById('q-char').textContent = this.value.length + ' caracteres';
+  });
+
+  // ---- MODELO ----
+  const modelData = {
+    'gemini-3.1-flash-lite-preview': { cls: 'green',  info: '🏆 <strong>Gemini 3.1 Flash Lite</strong> — 15 RPM · 500 consultas/día · 250K tokens/min.' },
+    'gemini-3-flash-preview':        { cls: 'green',  info: '🚀 <strong>Gemini 3 Flash</strong> — 5 RPM · 20 consultas/día · razonamiento avanzado.' },
+    'gemini-2.5-flash':      { cls: 'blue',   info: '⚡ <strong>Gemini 2.5 Flash</strong> — 5 RPM · 20 consultas/día · modelo probado y estable.' },
+    'gemini-2.5-flash-lite': { cls: 'blue',   info: '🔵 <strong>Gemini 2.5 Flash Lite</strong> — 10 RPM · 20 consultas/día · ideal para textos cortos.' }
+  };
+  const modelIds = ['m1','m2','m3','m4'];
+  function selectModel(model) {
+    selectedModel = model;
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(modelIds[Object.keys(modelData).indexOf(model)]).classList.add('active');
+    const mi = document.getElementById('model-info');
+    mi.className = 'model-info ' + modelData[model].cls;
+    mi.innerHTML = modelData[model].info;
+  }
+
+  // ---- MODO TABS ----
+  function switchMode(mode) {
+    currentMode = mode;
+    ['form','quick','url'].forEach(m => {
+      document.getElementById('panel-' + m).style.display = (m === mode) ? 'block' : 'none';
+      document.getElementById('tab-' + m).classList.toggle('active', m === mode);
+    });
+  }
+
+  // ---- PLANTILLAS ----
+  const templates = {
+    convocatoria: { asunto: 'Convocatoria a reunión técnica distrital', detalle: 'Convocar a los directores institucionales a reunión el próximo viernes para tratar el plan de contingencia del tercer quimestre y entrega de informes finales.'},
+    solicitud:    { asunto: 'Solicitud de autorización para adquisición de materiales', detalle: 'Solicitar al director distrital autorización para la compra de materiales de oficina por 200 dólares para el departamento DECE.'},
+    dece:         { asunto: 'Socialización de protocolos de actuación DECE', detalle: 'Comunicar a rectores los nuevos protocolos de detección y actuación ante casos de riesgo psicosocial según lineamientos DECE del presente año lectivo.'},
+    permiso:      { asunto: 'Solicitud de permiso para capacitación', detalle: 'Solicitar permiso de 3 días para asistir a capacitación sobre protocolos de crisis emocionales organizada por el Ministerio de Educación en Quito.'},
+    felicitacion: { asunto: 'Reconocimiento por logro en concurso pedagógico', detalle: 'Felicitar a la docente por haber obtenido primer lugar en el concurso de innovación pedagógica a nivel zonal representando al distrito.'}
+  };
+
+  function loadTemplate(key) {
+    const t = templates[key];
+    if (currentMode !== 'form') switchMode('form');
+    document.getElementById('f-asunto').value  = t.asunto;
+    document.getElementById('f-detalle').value = t.detalle;
+  }
+
+  // ---- API KEY ----
+  function toggleKey() {
+    const inp = document.getElementById('api-key');
+    inp.type = (inp.type === 'password') ? 'text' : 'password';
+  }
+
+  // ---- FETCH URL ----
+  async function fetchURL() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) return;
+    const st = document.getElementById('url-status');
+    st.style.display = 'block';
+    st.className = 'ok';
+    st.textContent = '⏳ Cargando contenido…';
+    try {
+      const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+      const res   = await fetch(proxy);
+      const data  = await res.json();
+      // Strip HTML tags
+      const txt = data.contents.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 3000);
+      document.getElementById('url-content').value = txt;
+      urlLoadedText = txt;
+      st.textContent = '✅ Contenido cargado (' + txt.length + ' caracteres). Puedes editarlo antes de generar.';
+    } catch(e) {
+      st.className = 'err';
+      st.textContent = '❌ No se pudo cargar el enlace. Copia el contenido manualmente.';
+    }
+  }
+
+  // ---- VISTA PREVIA ----
+  function previewData() {
+    const preview = buildContext();
+    document.getElementById('preview-text').value = preview;
+  }
+
+  function buildContext() {
+    if (currentMode === 'form') {
+      const emisorNombre = document.getElementById('f-emisor-nombre').value;
+      const emisorCargo  = document.getElementById('f-emisor-cargo').value;
+      const emisorInst   = document.getElementById('f-emisor-inst').value;
+      const receptorNombre = document.getElementById('f-receptor-nombre').value;
+      const receptorCargo  = document.getElementById('f-receptor-cargo').value;
+      const receptorInst   = document.getElementById('f-receptor-inst').value;
+      const asunto    = document.getElementById('f-asunto').value;
+      const fecha     = document.getElementById('f-fecha').value;
+      const plazo     = document.getElementById('f-plazo').value;
+      const ref       = document.getElementById('f-referencia').value;
+      const detalle   = document.getElementById('f-detalle').value;
+      let ctx = '';
+      if (emisorNombre || emisorCargo)  ctx += 'EMISOR: ' + [emisorNombre, emisorCargo, emisorInst].filter(Boolean).join(' · ') + '\n';
+      if (receptorNombre || receptorCargo) ctx += 'RECEPTOR: ' + [receptorNombre, receptorCargo, receptorInst].filter(Boolean).join(' · ') + '\n';
+      if (asunto)   ctx += 'ASUNTO: ' + asunto + '\n';
+      if (fecha)    ctx += 'FECHA: ' + fecha + '\n';
+      if (plazo)    ctx += 'PLAZO: ' + plazo + '\n';
+      if (ref)      ctx += 'REFERENCIA: ' + ref + '\n';
+      if (detalle)  ctx += '\nDETALLE:\n' + detalle;
+      return ctx || '(Sin datos ingresados)';
+    } else if (currentMode === 'quick') {
+      return document.getElementById('q-texto').value || '(Sin texto)';
+    } else {
+      return document.getElementById('url-content').value || '(Sin contenido de URL)';
+    }
+  }
+
+  // ---- ENVIAR A GEMINI ----
+  async function sendToGemini() {
+    const apiKey  = document.getElementById('api-key').value.trim();
+    const context = buildContext().trim();
+    const docType = document.getElementById('doc-type').value;
+    const tone    = document.getElementById('tone').value;
+    const length  = document.getElementById('length').value;
+    const action  = document.getElementById('action').value;
+    const header  = document.getElementById('include-header').checked;
+
+    if (!apiKey)  { showStatus('❌ Ingresa tu API Key de Google AI Studio.', 'error'); return; }
+    if (!context || context === '(Sin datos ingresados)' || context === '(Sin texto)') {
+      showStatus('❌ Completa al menos un campo antes de generar.', 'error'); return;
+    }
+
+    const headerInstr = header
+      ? 'Incluye siempre los campos de encabezado: PARA, DE, ASUNTO, FECHA (con los datos proporcionados).'
+      : 'No incluyas encabezado institucional, solo el cuerpo del documento.';
+
+    const prompt =
+      'Eres un experto redactor de documentos institucionales del Ministerio de Educación del Ecuador.\n' +
+      'Tarea: ' + action + ' el siguiente contenido como un ' + docType + ' con tono ' + tone + '.\n' +
+      'Extensión: ' + length + '.\n' +
+      headerInstr + '\n' +
+      'Reglas:\n' +
+      '- Usa lenguaje institucional apropiado para el Ministerio de Educación del Ecuador\n' +
+      '- Usa fórmulas de cortesía ecuatorianas (Atentamente, En atención a…, Particular que comunico…)\n' +
+      '- No inventes datos que no estén en el contexto\n' +
+      '- Devuelve SOLO el texto del documento, sin explicaciones\n\n' +
+      'DATOS:\n' + context;
+
+    const btn    = document.getElementById('btn-send');
+    const loader = document.getElementById('loader');
+    btn.disabled = true;
+    loader.style.display = 'flex';
+    document.getElementById('loader-msg').textContent = 'Generando con ' + selectedModel + '…';
+    hideStatus();
+    document.getElementById('preview-text').value = context;
+
+    try {
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+                  selectedModel + ':generateContent?key=' + apiKey;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              ...(pdfBase64 ? [{
+                inlineData: { mimeType: 'application/pdf', data: pdfBase64 }
+              }] : []),
+              { text: prompt }
+            ]
+          }],
+          generationConfig: Object.assign(
+            { maxOutputTokens: 2048 },
+            selectedModel.startsWith('gemini-3') ? {} : { temperature: 0.3 }
+          )
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'Error API (' + response.status + ')');
+      }
+      const data   = await response.json();
+      const result = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!result) throw new Error('Sin respuesta. Intenta de nuevo.');
+      document.getElementById('output-text').value = result.trim();
+      document.getElementById('btn-copy').style.display = 'inline-block';
+      showStatus('✅ Documento generado con ' + selectedModel + (pdfBase64 ? ' · PDF procesado ✓' : '') + '.', 'success');
+    } catch(err) {
+      showStatus('❌ ' + err.message, 'error');
+    }
+    btn.disabled = false;
+    loader.style.display = 'none';
+  }
+
+  function copyResult() {
+    const text = document.getElementById('output-text').value;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => showStatus('✅ Copiado al portapapeles.', 'success'));
+  }
+
+  function clearAll() {
+    ['f-emisor-nombre','f-emisor-cargo','f-emisor-inst',
+     'f-receptor-nombre','f-receptor-cargo','f-receptor-inst',
+     'f-asunto','f-plazo','f-referencia','f-detalle',
+     'q-texto','url-input','url-content','preview-text','output-text'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('f-fecha').valueAsDate = new Date();
+    document.getElementById('btn-copy').style.display = 'none';
+    document.getElementById('q-char').textContent = '0 caracteres';
+    hideStatus();
+  }
+
+
+  // ---- PDF HANDLING ----
+  let pdfBase64 = null;
+  let pdfMime   = 'application/pdf';
+
+  const pdfDrop  = document.getElementById('pdf-drop');
+  const pdfInput = document.getElementById('pdf-input');
+
+  pdfInput.addEventListener('change', e => { if(e.target.files[0]) loadPDF(e.target.files[0]); });
+  pdfDrop.addEventListener('dragover', e => { e.preventDefault(); pdfDrop.classList.add('dragover'); });
+  pdfDrop.addEventListener('dragleave', () => pdfDrop.classList.remove('dragover'));
+  pdfDrop.addEventListener('drop', e => {
+    e.preventDefault(); pdfDrop.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') loadPDF(f);
+    else showStatus('❌ Solo se aceptan archivos PDF.', 'error');
+  });
+
+  function loadPDF(file) {
+    if (file.size > 10 * 1024 * 1024) {
+      showStatus('❌ El PDF supera el límite de 10 MB.', 'error'); return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      pdfBase64 = e.target.result.split(',')[1];
+      document.getElementById('pdf-name').textContent = file.name;
+      document.getElementById('pdf-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+      document.getElementById('pdf-loaded').style.display = 'flex';
+      pdfDrop.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPDF() {
+    pdfBase64 = null;
+    pdfInput.value = '';
+    document.getElementById('pdf-loaded').style.display = 'none';
+    pdfDrop.style.display = 'block';
+  }
+  function showStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.innerHTML = msg; el.className = type; el.style.display = 'block';
+  }
+  function hideStatus() { document.getElementById('status').style.display = 'none'; }
+</script>
+</body>
+</html>
